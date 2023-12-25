@@ -2,11 +2,21 @@ const fs = require('fs').promises;
 const path = require('path');
 
 const contactsPath = path.join(__dirname, 'db', 'contacts.json');
-const data = fs.readFile(contactsPath, 'utf-8');
-const contacts = JSON.parse(data);
 
-function listContacts() {
+async function loadContacts() {
   try {
+    const data = await fs.readFile(contactsPath, 'utf-8');
+    return JSON.parse(data);
+  } catch (err) {
+    console.log("Read contacts error:", err.message);
+    return [];
+  }
+}
+
+async function listContacts() {
+  try {
+    const contacts = await loadContacts();
+
     if (contacts.length === 0) {
       console.log('No contacts found.');
     } else {
@@ -17,11 +27,12 @@ function listContacts() {
   }
 }
   
-function getContactById(contactId) {
+async function getContactById(contactId) {
   try {
+    const contacts = await loadContacts();
     const id = contactId;
 
-    const contact = contacts.find(contact => contact.id === id)
+    const contact = contacts.find(contact => contact.id === id);
 
     if (!contact) {
       console.log('No contacts with this id.');
@@ -33,12 +44,30 @@ function getContactById(contactId) {
   }
 }
   
-function removeContact(contactId) {
-  // ...twój kod
+async function removeContact(contactId) {
+  try {
+    const contacts = await loadContacts();
+    const id = contactId;
+
+    const contactIndex = contacts.findIndex(contact => contact.id === id);
+
+    if (contactIndex === -1) {
+      console.log('No contacts with this id.');
+    } else {
+      const removedContact = contacts.splice(contactIndex, 1)[0];
+      console.log('Removed contact:');
+      console.table([removedContact]);
+
+      fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2), 'utf-8');
+    }
+  } catch (err) {
+    console.log('Remove error:', err.message);
+  }
 }
 
-function addContact(name, email, phone) {
+async function addContact(name, email, phone) {
   try {
+    const contacts = await loadContacts();
     const newId = contacts.length + 1;
 
     const newContact = {
